@@ -1,10 +1,6 @@
 import socket
-import sys
-import time
-import random
 import json
-import gzip
-import pickle
+import sys
 
 class Client:
 	def __init__(self):
