@@ -8,7 +8,7 @@ import pickle
 
 class Client:
     def __init__(self):
-        self.srv_address = ('localhost', 42010)
+        self.srv_address = ('localhost', 12345)
 
     def server_connect(self):
         self.srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -18,14 +18,6 @@ class Client:
     def server_disconnect(self):
     	self.srv_sock.close()
     	print("Disconnected")
-
-    def hello_send(self):
-		"""
-		Send initial hello packet to server
-		"""
-		hello_packet = {'type': 'hello'}
-		packet = encode_dict(packet)
-		self.srv_sock.sendall(packet)
 
 if __name__ == "__main__":
 	client = Client()

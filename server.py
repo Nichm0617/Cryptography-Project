@@ -8,7 +8,7 @@ import gzip
 
 class Server:
     def __init__(self):
-        self.srv_address = ('localhost', 42010)
+        self.srv_address = ('localhost', 12345)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind(self.srv_address)
         self.sock.listen(1)
@@ -32,4 +32,4 @@ class Server:
 
 if __name__ == "__main__":
     server = Server()
-    server.accept_cli()
+    server.client_connect()
