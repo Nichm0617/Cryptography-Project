@@ -1,10 +1,5 @@
-import pickle
 import socket
 import sys
-import time
-import random
-import json
-import gzip
 
 class Server:
     def __init__(self):
