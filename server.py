@@ -2,6 +2,9 @@ import socket
 import json
 import gzip
 import sys
+import hmac
+
+from hmac_generator import hmac_generator
 
 class Server:
 	def __init__(self):
@@ -130,7 +133,7 @@ class Server:
 		message_bytes = message.encode()
 		compressed = gzip.compress(message_bytes)
 
-		#compute MAC of the compressed message here
+		#HMAC = hmac_generator.generate(self.sym_key.to_bytes(len(compressed), byteorder='big'), compressed)  #commented because sym_key is not yet recived here
 		#encrypt the compressed message here
 
 		pack = {'type': 'message'}
@@ -149,10 +152,11 @@ class Server:
 		if pack.decode('ascii') == "":
 			print("Disconnected")
 			sys.exit()
-			
+
 		pack = json.loads(pack.decode('utf-8'))
 
 		encrypted = pack['message']
+		MAC = pack['MAC']
 
 		# decrypt here
 		# decompress here
@@ -160,6 +164,13 @@ class Server:
 		message = encrypted #remove this once it works
 
 		#verify MAC here
+		# MAC_generator = hmac_generator()
+		# recived_MAC = MAC_generator.generate(self.sym_key.to_bytes(len(compressed), byteorder='big'), compressed)
+		# if(hmac.compare_digest(MAC, recived_MAC)):
+		# 	print("MACS DON'T MATCH. TERMINATING")
+		# 	print("Disconnected")
+		# 	sys.exit()
+		
 
 		print("Received message from client:", message)
 

@@ -4,6 +4,9 @@ import sys
 import zlib
 import gzip
 import secrets
+import hmac
+
+from hmac_generator import hmac_generator
 
 class Client:
 	def __init__(self):
@@ -96,12 +99,12 @@ class Client:
 		message_bytes = message.encode()
 		compressed = gzip.compress(message_bytes)
 
-		#compute MAC of the compressed message here
+		HMAC = hmac_generator.generate(self.sym_key.to_bytes(len(compressed), byteorder='big'), compressed)
 		#encrypt the compressed message here
 
 		pack = {'type': 'message'}
 		pack['message'] = message
-		pack['MAC'] = 'placeholder'
+		pack['MAC'] = HMAC
 
 		pack = json.dumps(pack).encode('utf-8')
 		self.srv_sock.sendall(pack)
@@ -113,10 +116,12 @@ class Client:
 		pack = self.srv_sock.recv(20000)
 		# server terminated connection
 		if pack.decode('ascii') == "":
+			print("Disconnected")
 			sys.exit()
-		pack = json.loads(pack.decode('utf-8'))
 
+		pack = json.loads(pack.decode('utf-8'))
 		encrypted = pack['message']
+		MAC = pack['MAC']
 
 		# decrypt here
 		# decompress here
@@ -124,6 +129,12 @@ class Client:
 		message = encrypted #remove this once it works
 
 		#verify MAC here
+		# recived_MAC = MAC_generator.generate(self.sym_key.to_bytes(len(compressed), byteorder='big'), compressed)
+		# if(hmac.compare_digest(MAC, recived_MAC)):
+		# 	print("MACS DON'T MATCH. TERMINATING")
+		# 	print("Disconnected")
+		# 	sys.exit()
+		
 
 		print("Received message from client:", message)
 		
