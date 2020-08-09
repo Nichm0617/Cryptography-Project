@@ -16,6 +16,7 @@ class Server:
 		self.sock.bind(self.srv_address)
 		self.sock.listen(1)
 		self.balance = 0
+		self.certificate = "0x3ff776cfb9c13e140xa6d92656f9446d7f0xbd6d77390ca641b50xe163e31bed2455130x9810d1fc0ca8d0050x3daa3513def568030x24999e0e479ec6760x7f4a9f0ad431d0c20x1c92061fc19a62920x52236f020c417bdd"
 		print("SSL Server started at", self.srv_address)
 
 	def client_connect(self):
@@ -62,7 +63,6 @@ class Server:
 		"""
 		Send the selected suit back to client
 		"""
-		self.certificate = "0x3ff776cfb9c13e140xa6d92656f9446d7f0xbd6d77390ca641b50xe163e31bed2455130x9810d1fc0ca8d0050x3daa3513def568030x24999e0e479ec6760x7f4a9f0ad431d0c20x1c92061fc19a62920x52236f020c417bdd"
 		pack = {'type': 'hello'}
 		pack['sym_key_type'] = self.sym_key_type
 		pack['key_exc_type'] = self.key_exc_type

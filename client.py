@@ -14,6 +14,7 @@ from Private_Higher_Auth import Decrypt_Auth
 class Client:
 	def __init__(self):
 		self.srv_address = ('localhost', 12345)
+		self.certificate = "0xdee761ae9b2cdea80x9e54f29337c2dd2a0x8b7f4910b8b5ec8c0xb5e26f02c78672440xcadf5c5228f5a8b30x76c664ab69a7605b0xccea27bf72e061810xd76304543ccc19e30x7c4d094a3f2437050xeae4fc05fe53763c0xf48740eec3e8bf45"
 
 	def server_connect(self):
 		self.srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -28,7 +29,6 @@ class Client:
 		"""
 		Send the hello, this includes information needed for encryption
 		"""
-		self.certificate = "0xdee761ae9b2cdea80x9e54f29337c2dd2a0x8b7f4910b8b5ec8c0xb5e26f02c78672440xcadf5c5228f5a8b30x76c664ab69a7605b0xccea27bf72e061810xd76304543ccc19e30x7c4d094a3f2437050xeae4fc05fe53763c0xf48740eec3e8bf45"
 		pack = {'type': 'hello'}
 		pack['sym_key_type'] = 'des'
 		pack['key_exc_type'] = 'rsa'
