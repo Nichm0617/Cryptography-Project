@@ -7,6 +7,9 @@ import secrets
 import hmac
 
 from hmac_generator import hmac_generator
+from RSA import generate_keys, encrypt_rsa, decrypt_rsa
+from DES import encrypt_des, decrypt_des
+from Private_Higher_Auth import Decrypt_Auth
 
 class Client:
 	def __init__(self):
@@ -25,11 +28,14 @@ class Client:
 		"""
 		Send the hello, this includes information needed for encryption
 		"""
-		#may need to also send protocol version, session ID, compression method, and inital random numbers, though I am unsure what those would be
+		self.certificate = "0xdee761ae9b2cdea80x9e54f29337c2dd2a0x8b7f4910b8b5ec8c0xb5e26f02c78672440xcadf5c5228f5a8b30x76c664ab69a7605b0xccea27bf72e061810xd76304543ccc19e30x7c4d094a3f2437050xeae4fc05fe53763c0xf48740eec3e8bf45"
 		pack = {'type': 'hello'}
 		pack['sym_key_type'] = 'des'
 		pack['key_exc_type'] = 'rsa'
 		pack['hash_type'] = 'sha1'
+		pack['certificate'] = self.certificate
+		pack['certificate_bytelen'] = 36
+		pack['certificate_numlen'] = 86
 		pack = json.dumps(pack).encode('utf-8')
 		self.srv_sock.sendall(pack)
 		print("Sent Hello")
@@ -43,6 +49,11 @@ class Client:
 		hash_type = pack['hash_type']
 		key_exec_type = pack['key_exc_type']
 		sym_key_type = pack['sym_key_type']
+		if not Decrypt_Auth(pack['certificate'], pack['certificate_numlen'], pack['certificate_bytelen']):
+			print("Untrused Server, Shutting Down...")
+			print("Disconnected")
+			sys.exit()
+
 		print("Recived Hello")
 
 	def send_public_keys(self):
@@ -50,11 +61,12 @@ class Client:
 		Generate public keys and send them to the server
 		"""
 
-		#generate keys here, the public keys used with RSA
-
+		public, private = generate_keys();
+		self.rsa_private_key_1 = private[0]
+		self.rsa_private_key_2 = private[1]
 		pack = {'type': 'public_keys'}
-		pack['key_1_public'] = 'placeholder 1' #replace with keys
-		pack['key_2_public'] = 'placeholder 2' #replace with keys
+		pack['key_1_public'] = public[0]
+		pack['key_2_public'] = public[1]
 		pack = json.dumps(pack).encode('utf-8')
 		self.srv_sock.sendall(pack)
 		print("Sent Public Keys")
@@ -65,21 +77,19 @@ class Client:
 		"""
 		pack = self.srv_sock.recv(20000)
 		pack = json.loads(pack.decode('utf-8'))
-		self.server_public_key_1 = pack['key_1_public']
-		self.server_public_key_2 = pack['key_2_public']
+		self.rsa_server_public_key_1 = pack['key_1_public']
+		self.rsa_server_public_key_2 = pack['key_2_public']
 		print("Recived Public Keys From Server")
 
 	def send_symmetric_key(self):
 		"""
 		Encrypt a symmetric key and send it to the server
 		"""
-		key_length = 100 #not sure about what size the key should be, this will effect DES
-		self.sym_key = secrets.randbits(key_length) #this is a secure way of generating random bits
-
-		#encrypt the key here before sending with RSA
+		self.sym_key = secrets.randbits(260) #this is a secure way of generating random bits
+		encrypted_sym_key = encrypt_rsa(self.sym_key, self.rsa_server_public_key_1, self.rsa_server_public_key_2)
 
 		pack = {'type': 'symmetric_key'}
-		pack['key_symmetric'] = 'placeholder' #replace with encrypted key
+		pack['key_symmetric'] = encrypted_sym_key #replace with encrypted key
 		pack = json.dumps(pack).encode('utf-8')
 		self.srv_sock.sendall(pack)
 		print("Sent Symmetric Key")
@@ -98,12 +108,16 @@ class Client:
 		"""
 		message_bytes = message.encode()
 		compressed = gzip.compress(message_bytes)
-
-		HMAC = hmac_generator.generate(self.sym_key.to_bytes(len(compressed), byteorder='big'), compressed)
-		#encrypt the compressed message here
+		compressed_num = int.from_bytes(compressed, byteorder='big')
+		bytelen = len(compressed)
+		numlen = len(str(compressed_num))
+		HMAC = hmac_generator.generate(self.sym_key.to_bytes(len(compressed)*4, byteorder='big'), compressed)
+		encrypted = encrypt_des(compressed_num, self.sym_key)
 
 		pack = {'type': 'message'}
-		pack['message'] = message
+		pack['message'] = encrypted
+		pack['numlen'] = numlen
+		pack['bytelen'] = bytelen
 		pack['MAC'] = HMAC
 
 		pack = json.dumps(pack).encode('utf-8')
@@ -121,22 +135,24 @@ class Client:
 
 		pack = json.loads(pack.decode('utf-8'))
 		encrypted = pack['message']
+		numlen = pack['numlen']
+		bytelen = pack['bytelen']
 		MAC = pack['MAC']
 
-		# decrypt here
-		# decompress here
-		# message = decompressed.decode('utf-8')
-		message = encrypted #remove this once it works
+		decrypted = decrypt_des(encrypted, self.sym_key)
+		decrypted_no_padding = int(str(decrypted)[:numlen])#remove padding
+		compressed = int(decrypted_no_padding).to_bytes(bytelen, byteorder='big')
+		decompress = gzip.decompress(compressed)
+		original = decompress.decode()
 
 		#verify MAC here
-		# recived_MAC = MAC_generator.generate(self.sym_key.to_bytes(len(compressed), byteorder='big'), compressed)
-		# if(hmac.compare_digest(MAC, recived_MAC)):
-		# 	print("MACS DON'T MATCH. TERMINATING")
-		# 	print("Disconnected")
-		# 	sys.exit()
+		recived_MAC = hmac_generator.generate(self.sym_key.to_bytes(len(compressed)*4, byteorder='big'), compressed)
+		if(not hmac.compare_digest(MAC, recived_MAC)):
+			print("MACS DON'T MATCH. TERMINATING")
+			print("Disconnected")
+			sys.exit()
 		
-
-		print("Received message from client:", message)
+		print("Received message from server:", original)
 		
 if __name__ == "__main__":
 	client = Client()
@@ -150,7 +166,7 @@ if __name__ == "__main__":
 	client.recive_hello()
 
 	#public key step
-	client.send_public_keys()
+	#client.send_public_keys()
 	client.recive_public_keys()
 
 	#symmetric key step

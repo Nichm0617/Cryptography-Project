@@ -1,7 +1,5 @@
-# Homework 1.a ==> Simplified DES
-# performs a left shift on n, wrapping the last bit around to the front
-# assumes n is 5 bits
 import binascii
+import secrets
 
 def circularShift28(n,m):
     n2 = (n << 1) & 0b1111111111111111111111111111
@@ -78,13 +76,12 @@ def IPLR(L, R, K, E):
     return out
 
 
-def IPcalc(Keys):
+def IPcalc(Keys, M):
     IP = permute(IParr, M, 64)
     #print("IP = {:064b}".format(IP), sep='')
     IPleft = IP >> 32
     IPright = IP & 0b11111111111111111111111111111111
     num = 0
-    print()
     for k in Keys:
         num += 1
         l = IPright
@@ -95,7 +92,7 @@ def IPcalc(Keys):
     return ((IPright << 32) + IPleft)
 
 
-def iIPcalc(Keys):
+def iIPcalc(Keys, M):
     IP = permute(IParr, M, 64)
     #print("IP = {:064b}".format(IP), sep='')
     IPright = IP & 0b11111111111111111111111111111111
@@ -113,8 +110,8 @@ def iIPcalc(Keys):
 
 
 def Kpluz(KpluZ):
-    left = Kplus >> 28
-    right = Kplus & 0b1111111111111111111111111111
+    left = KpluZ >> 28
+    right = KpluZ & 0b1111111111111111111111111111
     i = 0
     #print("C", i, " = {:028b}".format(left), sep='')
     #print("D", i, " = {:028b}".format(right), sep='')  # if 0 is at the beginning of it it will appear as shorter than it should
@@ -234,45 +231,58 @@ E = [   [32, 1, 2, 3, 4, 5],
         [24, 25, 26, 27, 28, 29],
         [28, 29, 30, 31, 32, 1]]
 
-message = "WeDidIt!"
-MHex = ""
-for c in message:
-    MHex += format(ord(c), "x")
+def hex2(n):
+  x = '%x' % (n,)
+  return ('0' * (len(x) % 2)) + x
 
-#MHex = hex("0123456789ABCDEF")
-#M = 0b0000000100100011010001010110011110001001101010111100110111101111
-M = int(MHex,16)
-print("Message in binary = {:064b}".format(M), sep='')
+def encrypt_des(mes, K):
+	init = str(mes)
+	end_str = ""
+	chunks = [init[i:i+8] for i in range(0, len(init), 8)]
+	chunks[-1] = chunks[-1].ljust(8, '0')
+	for message in chunks:
+		MHex = ""
+		for c in message:
+			MHex += format(ord(c), "x")
+		# MHex = hex("0123456789ABCDEF")
+		# M = 0b0000000100100011010001010110011110001001101010111100110111101111
+		M = int(MHex,16)
+		# Substitution Matrices:
+		Kplus = permute(PC1, K, 64)
+		#Step 1
+		Keys = Kpluz(Kplus)
+		#Step 2
+		final = IPcalc(Keys, M)
+		end = permute(IPinverse, final, 64)
+		ending_string = str(hex(end))
+		temp_string = str(hex(end))
+		if len(ending_string) % 2 == 1: #buffers hex with a 0 if needed
+			new_string = temp_string[:2] + "0" + temp_string[2:] 
+			end_str += new_string
+		else :
+			end_str += ending_string
+	return end_str
 
-# Substitution Matrices:
-K = 0b0001001100110100010101110111100110011011101111001101111111110001
-Kplus = permute(PC1, K, 64)
-print("K+ = {:056b}".format(Kplus), sep='')
-#Step 1
-Keys = Kpluz(Kplus)
-#Step 2
-final = IPcalc(Keys)
-print("before final permutation = {:064b}".format(final), sep='')
-end = permute(IPinverse, final, 64)
-print("encrypted in binary = {:064b}".format(end), sep='')
-print("encrypted in hex = ", hex(end), sep='')
 
-print()
+def decrypt_des(ciphertext, K):
+	init = str(ciphertext)
+	end_str = ""
+	chunks = [init[i:i+18] for i in range(0, len(init), 18)]
+	for text_str in chunks:
+		text = int(text_str, 16)
+		M = text
+		Kplus = permute(PC1, K, 64)
+		#Step 1
+		Keys = Kpluz(Kplus)
+		#Step 2
+		final = iIPcalc(Keys, M)
+		end = permute(IPinverse, final, 64)
+		end_str += str(binascii.unhexlify(hex(end)[2:18]))[2:10]
+	return end_str;
 
-M = end
-print("Message in binary = {:064b}".format(M), sep='')
-K = 0b0001001100110100010101110111100110011011101111001101111111110001
-Kplus = permute(PC1, K, 64)
-print("K+ = {:056b}".format(Kplus), sep='')
-#Step 1
-Keys = Kpluz(Kplus)
-#Step 2
-final = iIPcalc(Keys)
-print("before final permutation = {:064b}".format(final), sep='')
-end = permute(IPinverse, final, 64)
-print("decrypted in binary = {:064b}".format(end), sep='')
-print("decrypted in hex = ", hex(end), sep='')
-print("Decrypted message = ", str(binascii.unhexlify(hex(end)[2:18]))[2:10], sep='')
+# key = secrets.randbits(260) #this is a secure way of generating random bits
+# ciphertext = encrypt("BANGOTdS", key)
+# message = decrypt(ciphertext, key)
 
 
 # Running Encryption and Decryption with sample plaintext

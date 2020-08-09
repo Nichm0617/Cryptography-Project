@@ -93,23 +93,23 @@ def generate_keys():
 	return public, private
 
 # Encryption algorithm:
-def encrypt(m, e, n):
+def encrypt_rsa(m, e, n):
     c = pow(m, e, n)
     return c
 
 # Decryption algorithm:
-def decrypt(c, d, n):
+def decrypt_rsa(c, d, n):
     p = pow(c, d, n)
     return p
 
-print("Generate_keys:\n")
-public, private = generate_keys()
-print("Public Key = " + str(public))
-print("Private Key = " + str(private))
+# print("Generate_keys:\n")
+# public, private = generate_keys()
+# print("Public Key = " + str(public))
+# print("Private Key = " + str(private))
 
-print("\nEncrypting Message 12345678987654321:\n")
-message = 12345678987654321
-c = encrypt(message, public[0], public[1])
-p = decrypt(c, private[0], private[1])
-print("Ciphertext = " + str(c))
-print("Plaintext = " + str(p))
+# print("\nEncrypting Message 12345678987654321:\n")
+# message = 12345678987654321
+# c = encrypt(message, public[0], public[1])
+# p = decrypt(c, private[0], private[1])
+# print("Ciphertext = " + str(c))
+# print("Plaintext = " + str(p))
