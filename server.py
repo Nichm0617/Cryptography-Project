@@ -189,7 +189,7 @@ class Server:
 
 		print("Received message from client:", original)
 		if(original.count(' ') == 0):
-			self.send_message(conn, "Cammand Not Recognized")
+			self.send_message(conn, "Command Not Recognized")
 			return
 		command = original.split(' ', 1)[0]
 		second_part = original.split(' ', 1)[1]
@@ -216,7 +216,7 @@ class Server:
 				self.send_message(conn, "Invalid Number")
 				return
 		else:
-			self.send_message(conn, "Cammand Not Recognized")
+			self.send_message(conn, "Command Not Recognized")
 
 
 if __name__ == "__main__":
